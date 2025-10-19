@@ -1,6 +1,6 @@
 # Provisioning VPC, ECS and ALB using Terraform
 
-![](https://github.com/mashun4ek/ecs_terraform_workshop/workflows/Terraform/badge.svg)
+![](https://github.com/chrissinkep/ECS_TERRAFORM_WORKSHOP)
 
 This is the example of creating a simple infrastructure using Terraform and AWS cloud provider. It consists of:
 - Virtual Private Cloud (VPC) with 3 public subnets in 3 availability zones
@@ -9,7 +9,7 @@ This is the example of creating a simple infrastructure using Terraform and AWS 
 
 ## How to create the infrastructure?
 This example implies that you have already AWS account and Terraform CLI installed.
-1. `git clone https://github.com/mashun4ek/ecs_terraform_workshop.git`
+1. `git clone https://github.com/chrissinkep/ECS_TERRAFORM_WORKSHOP.git`
 2. cd ecs_terraform_workshop
 3. terraform init
 4. terraform plan
