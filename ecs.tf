@@ -1,10 +1,15 @@
 resource "aws_ecs_cluster" "web-cluster" {
-  name               = var.cluster_name
-  capacity_providers = [aws_ecs_capacity_provider.test.name]
+  name = var.cluster_name
   tags = {
     "env"       = "dev"
     "createdBy" = "chrissinkep"
   }
+}
+
+resource "aws_ecs_cluster_capacity_providers" "web_cluster_capacity_providers" {
+  cluster_name      = aws_ecs_cluster.web-cluster.name
+  capacity_providers = [aws_ecs_capacity_provider.test.name]
+  # Optional: define default_capacity_provider_strategy blocks if you need defaults
 }
 
 resource "aws_ecs_capacity_provider" "test" {
