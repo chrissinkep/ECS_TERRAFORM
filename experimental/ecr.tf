@@ -6,7 +6,7 @@ resource "aws_ecr_repository" "app_repo" {
   }
   tags = {
     "env"       = "dev"
-    "createdBy" = "mkerimova"
+    "createdBy" = "chrissinkep"
   }
 }
 

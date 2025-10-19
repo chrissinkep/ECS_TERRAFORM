@@ -36,7 +36,7 @@ resource "aws_security_group" "ec2-sg" {
   }
 
   tags = {
-    Name = "mkerimova"
+    Name = "chrissinkep"
   }
 }
 
