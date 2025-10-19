@@ -6,7 +6,7 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "chrissinkep-terraform-remote-state"
+    bucket = "ecsworkshopbucket"
     key    = "state/terraform.tfstate"
     region = "us-east-1"
   }

@@ -3,7 +3,7 @@ resource "aws_ecs_cluster" "web-cluster" {
   capacity_providers = [aws_ecs_capacity_provider.test.name]
   tags = {
     "env"       = "dev"
-    "createdBy" = "chrissinkep"
+    "createdBy" = "mkerimova"
   }
 }
 
@@ -27,7 +27,7 @@ resource "aws_ecs_task_definition" "task-definition-test" {
   network_mode          = "bridge"
   tags = {
     "env"       = "dev"
-    "createdBy" = "chrissinkep"
+    "createdBy" = "mkerimova"
   }
 }
 
@@ -57,6 +57,6 @@ resource "aws_cloudwatch_log_group" "log_group" {
   name = "/ecs/frontend-container"
   tags = {
     "env"       = "dev"
-    "createdBy" = "chrissinkep"
+    "createdBy" = "mkerimova"
   }
 }
