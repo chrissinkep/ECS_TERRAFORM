@@ -12,7 +12,7 @@ resource "aws_lb" "test-lb" {
 
 resource "aws_security_group" "lb" {
   name   = "allow-all-lb"
-  vpc_id = data.aws_vpc.main.id
+  vpc_id = module.vpc.vpc_id
   ingress {
     from_port   = 0
     to_port     = 0
@@ -37,7 +37,7 @@ resource "aws_lb_target_group" "lb_target_group" {
   port        = "80"
   protocol    = "HTTP"
   target_type = "instance"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
   health_check {
     path                = "/"
     healthy_threshold   = 2
