@@ -21,7 +21,7 @@ data "aws_ami" "amazon_linux" {
 resource "aws_security_group" "ec2-sg" {
   name        = "allow-all-ec2"
   description = "allow all"
-  vpc_id      = data.aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
   ingress {
     from_port   = 0
     to_port     = 0
