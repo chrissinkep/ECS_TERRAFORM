@@ -1,5 +1,5 @@
 ##########################################
-# AMI for ECS EC2 instances
+# ECS AMI
 ##########################################
 data "aws_ami" "ecs_ami" {
   most_recent = true
@@ -12,18 +12,54 @@ data "aws_ami" "ecs_ami" {
 }
 
 ##########################################
-# Security Group
+# Security Groups
 ##########################################
-resource "aws_security_group" "ec2-sg" {
-  name        = "ecs-ec2-sg"
-  description = "Allow traffic for ECS EC2 instances"
+
+# ALB Security Group
+resource "aws_security_group" "alb_sg" {
+  name        = "alb-sg"
+  description = "Allow HTTP from Internet"
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    security_groups = []  # allow all outbound
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "alb-sg"
+  }
+}
+
+# ECS EC2 Security Group
+resource "aws_security_group" "ec2_sg" {
+  name        = "ecs-ec2-sg"
+  description = "Allow traffic from ALB"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]  # Only ALB can reach ECS
+  }
+
+  # Optional SSH access
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["YOUR_IP/32"]  # replace with your public IP
   }
 
   egress {
@@ -34,12 +70,12 @@ resource "aws_security_group" "ec2-sg" {
   }
 
   tags = {
-    Name = "chrissinkep"
+    Name = "ecs-ec2-sg"
   }
 }
 
 ##########################################
-# Launch Template (replaces Launch Configuration)
+# Launch Template for ECS EC2
 ##########################################
 resource "aws_launch_template" "lt" {
   name_prefix   = "ecs_lt_"
@@ -47,7 +83,8 @@ resource "aws_launch_template" "lt" {
   instance_type = "t2.micro"
   key_name      = var.key_name
 
-  vpc_security_group_ids = [aws_security_group.ec2-sg.id]
+  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+
   iam_instance_profile {
     name = aws_iam_instance_profile.ecs_service_role.name
   }
@@ -97,5 +134,40 @@ resource "aws_autoscaling_group" "asg" {
 
   lifecycle {
     create_before_destroy = true
+  }
+}
+
+##########################################
+# ALB (Internet-Facing)
+##########################################
+resource "aws_lb" "alb" {
+  name               = "ecs-alb"
+  load_balancer_type = "application"
+  subnets            = module.vpc.public_subnets
+  security_groups    = [aws_security_group.alb_sg.id]
+}
+
+resource "aws_lb_target_group" "lb_target_group" {
+  name     = "ecs-tg"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = module.vpc.vpc_id
+  health_check {
+    path                = "/"
+    interval            = 30
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    matcher             = "200-399"
+  }
+}
+
+resource "aws_lb_listener" "web_listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.lb_target_group.arn
   }
 }
