@@ -35,7 +35,7 @@ output "ecs_service_name" {
 # ECS Task Definition
 output "ecs_task_definition_arn" {
   description = "ARN of the ECS Task Definition"
-  value       = aws_ecs_task_definition.task-definition-test.arn
+  value       = aws_ecs_task_definition.task_definition.arn
 }
 
 # VPC ID
