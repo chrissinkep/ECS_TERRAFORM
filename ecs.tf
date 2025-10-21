@@ -91,8 +91,8 @@ resource "aws_launch_template" "lt" {
   vpc_security_group_ids = [aws_security_group.ecs_sg.id]
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_service_role.name
-  }
+  name = aws_iam_instance_profile.ecs_instance_profile.name
+}
 
   user_data = base64encode(<<-EOF
               #!/bin/bash
