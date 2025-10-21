@@ -1,25 +1,8 @@
-##########################################
-# ECS AMI
-##########################################
-data "aws_ami" "ecs_ami" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
-  }
-}
-
-##########################################
-# Security Groups
-##########################################
-
 # ALB Security Group
 resource "aws_security_group" "alb_sg" {
   name        = "alb-sg"
   description = "Allow HTTP from Internet"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 80
@@ -29,11 +12,10 @@ resource "aws_security_group" "alb_sg" {
   }
 
   egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = []  # allow all outbound
-    cidr_blocks     = ["0.0.0.0/0"]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -42,16 +24,16 @@ resource "aws_security_group" "alb_sg" {
 }
 
 # ECS EC2 Security Group
-resource "aws_security_group" "ec2_sg" {
+resource "aws_security_group" "ecs_sg" {
   name        = "ecs-ec2-sg"
   description = "Allow traffic from ALB"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]  # Only ALB can reach ECS
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   # Optional SSH access
@@ -59,7 +41,7 @@ resource "aws_security_group" "ec2_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["YOUR_IP/32"]  # replace with your public IP
+    cidr_blocks = ["YOUR_IP/32"]  # Replace with your public IP
   }
 
   egress {
@@ -71,103 +53,5 @@ resource "aws_security_group" "ec2_sg" {
 
   tags = {
     Name = "ecs-ec2-sg"
-  }
-}
-
-##########################################
-# Launch Template for ECS EC2
-##########################################
-resource "aws_launch_template" "lt" {
-  name_prefix   = "ecs_lt_"
-  image_id      = data.aws_ami.ecs_ami.id
-  instance_type = "t2.micro"
-  key_name      = var.key_name
-
-  vpc_security_group_ids = [aws_security_group.ec2_sg.id]
-
-  iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_service_role.name
-  }
-
-  user_data = base64encode(<<-EOF
-              #!/bin/bash
-              echo ECS_CLUSTER=${var.cluster_name} >> /etc/ecs/ecs.config
-              EOF
-  )
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = {
-      Name = "ecs-ec2-instance"
-    }
-  }
-}
-
-##########################################
-# Auto Scaling Group
-##########################################
-resource "aws_autoscaling_group" "asg" {
-  name                      = "ecs-asg"
-  max_size                  = 4
-  min_size                  = 3
-  desired_capacity           = 3
-  vpc_zone_identifier        = module.vpc.public_subnets
-  target_group_arns          = [aws_lb_target_group.lb_target_group.arn]
-  protect_from_scale_in      = true
-  health_check_type          = "ELB"
-  health_check_grace_period  = 300
-
-  launch_template {
-    id      = aws_launch_template.lt.id
-    version = "$Latest"
-  }
-
-  tag {
-    key                 = "Name"
-    value               = "ecs-ec2-instance"
-    propagate_at_launch = true
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-##########################################
-# ALB (Internet-Facing)
-##########################################
-resource "aws_lb" "alb" {
-  name               = "ecs-alb"
-  load_balancer_type = "application"
-  subnets            = module.vpc.public_subnets
-  security_groups    = [aws_security_group.alb_sg.id]
-}
-
-resource "aws_lb_target_group" "lb_target_group" {
-  name     = "ecs-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = module.vpc.vpc_id
-  health_check {
-    path                = "/"
-    interval            = 30
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-    matcher             = "200-399"
-  }
-}
-
-resource "aws_lb_listener" "web_listener" {
-  load_balancer_arn = aws_lb.alb.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.lb_target_group.arn
   }
 }

@@ -1,59 +1,39 @@
-resource "aws_lb" "test-lb" {
-  name               = "test-ecs-lb"
+resource "aws_lb" "alb" {
+  name               = "ecs-alb"
   load_balancer_type = "application"
+  subnets            = var.public_subnets
+  security_groups    = [aws_security_group.alb_sg.id]
   internal           = false
-  subnets            = module.vpc.public_subnets
-  tags = {
-    "env"       = "dev"
-    "createdBy" = "chrissinkep"
-  }
-  security_groups = [aws_security_group.lb.id]
-}
-
-resource "aws_security_group" "lb" {
-  name   = "allow-all-lb"
-  vpc_id = module.vpc.vpc_id
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
-    "env"       = "dev"
-    "createdBy" = "chrissinkep"
+    env       = "dev"
+    createdBy = "chrissinkep"
   }
 }
 
-resource "aws_lb_target_group" "lb_target_group" {
-  name        = "masha-target-group"
-  port        = "80"
+resource "aws_lb_target_group" "alb_tg" {
+  name        = "ecs-tg"
+  port        = 80
   protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "instance"
-  vpc_id      = module.vpc.vpc_id
+
   health_check {
     path                = "/"
+    interval            = 30
     healthy_threshold   = 2
-    unhealthy_threshold = 10
-    timeout             = 60
-    interval            = 300
-    matcher             = "200,301,302"
+    unhealthy_threshold = 2
+    matcher             = "200-399"
   }
 }
 
-resource "aws_lb_listener" "web-listener" {
-  load_balancer_arn = aws_lb.test-lb.arn
-  port              = "80"
+resource "aws_lb_listener" "alb_listener" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
   protocol          = "HTTP"
+
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.lb_target_group.arn
+    target_group_arn = aws_lb_target_group.alb_tg.arn
   }
 }
