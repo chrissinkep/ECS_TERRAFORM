@@ -1,51 +1,19 @@
-##################################################
-# Variables
-##################################################
-
 variable "cluster_name" {
-  description = "ECS Cluster name"
+  description = "Name of the ECS cluster"
   type        = string
-  default     = "web-cluster"
+  default     = "ecs-web-cluster"
 }
 
 variable "key_name" {
-  description = "EC2 Key Pair name"
+  description = "EC2 Key Pair name for SSH access"
   type        = string
-}
-
-variable "public_subnets" {
-  description = "List of public subnet IDs for ECS instances and ALB"
-  type        = list(string)
-}
-
-variable "vpc_id" {
-  description = "VPC ID where ECS instances will be launched"
-  type        = string
+  default     = "ecs_workshop"
 }
 
 variable "ecr_image_uri" {
   description = "ECR image URI for the container"
   type        = string
+  default     = "863218674815.dkr.ecr.us-east-1.amazonaws.com/workshop"
 }
 
-##################################################
-# Optional variables for ASG
-##################################################
-
-variable "asg_min_size" {
-  description = "Minimum number of ECS instances in ASG"
-  type        = number
-  default     = 3
-}
-
-variable "asg_max_size" {
-  description = "Maximum number of ECS instances in ASG"
-  type        = number
-  default     = 4
-}
-
-variable "asg_desired_capacity" {
-  description = "Desired number of ECS instances in ASG"
-  type        = number
-  default     = 3
-}
+# No need for public_subnets input — we will get it from the VPC module
